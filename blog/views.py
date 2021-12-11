@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse
 from blog.models import Articles
-
+from django.core.paginator import Paginator
 def hello_world(request):
     return HttpResponse("hello world")
 
@@ -14,8 +14,31 @@ def article_content(request):
     return HttpResponse(returnStr)
 
 def get_index_page(request):
+    page = request.GET.get('page')
+    if page:
+        page = int(page)
+    else:
+        page = 1
     all_article = Articles.objects.all()
-    return render(request,'blog/index.html',{'article_list':all_article})
+    top2_article_list = Articles.objects.order_by('-publish_date')[:2]
+    paginator = Paginator(all_article,2)
+    page_num = paginator.num_pages
+    page_article_list = paginator.page(page)
+    if page_article_list.has_next():
+        next_page = page+1
+    else:
+        next_page = page
+    if page_article_list.has_previous():
+        previous_page = page - 1
+    else:
+        previous_page = page
+    return render(request,'blog/index.html',{'article_list':page_article_list,
+                                             'page_num':range(1,page_num+1),
+                                             'cur_page':page,
+                                             'next_page':next_page,
+                                             'previous_page':previous_page,
+                                             'top2_article_list':top2_article_list
+                                             })
 
 def get_detail_page(request,article_id):
     all_article = Articles.objects.all()
